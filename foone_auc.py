@@ -24,7 +24,7 @@ def disambiguate_wiki(disamb_links, gc):
             ranking[page] += 5
         if gc.country in page:
             ranking[page] += 2
-        if gc.state in page:
+        if gc.state in page or gc.state in summary: # allows for England being in summ not titles
             ranking[page] += 2 # no counties
     top = max(ranking, key=lambda x: ranking[x])
     pprint(ranking)
