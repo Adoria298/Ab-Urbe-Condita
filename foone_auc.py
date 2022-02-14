@@ -29,6 +29,13 @@ def disambiguate_wiki(disamb_links, gc):
             ranking[undisambed[0]] = undisambed[1]
         except wikipedia.exceptions.PageError:
             continue
+        wpage = wikipedia.page(page)
+        wlat, wlong = wpage.coordinates
+        lat, long = gc.latlong
+        if int(lat) - 2 > int(wlat) or int(wlat) > int(lat) + 2:
+            ranking[page] -= 1000
+        if int(long) - 2 > int(wlong) or int(wlong) > int(long) + 2:
+            ranking[page] -= 1000
         if "city" in summary and "was a city" not in summary:
             ranking[page] += 10
         if gc.city not in summary and gc.city not in page:
@@ -46,14 +53,13 @@ def disambiguate_wiki(disamb_links, gc):
     return top, ranking[top]
 
 def get_wikipedia_article(gc):
-    results = wikipedia.search(gc.city)
+    latitude, longitude = gc.latlng
+    results = wikipedia.geosearch(latitude=latitude, longitude=longitude, title=gc.city)
     if len(results) < 1:
         return wikipedia.page("Rome")
-    elif len(results) == 1:
-        return wikipedia.page(results[0])
     else: # disambiguate
         try:
-            return wikipedia.page(disambiguate_wiki(results, gc)[0]) # .page raises below error if needed
+            return wikipedia.page(results[0]) # .page raises below error if needed
         except wikipedia.exceptions.DisambiguationError as e:
             return wikipedia.page(disambiguate_wiki(e.options, gc)[0])
 
