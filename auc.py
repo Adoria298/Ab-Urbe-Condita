@@ -8,6 +8,8 @@ import logging                      # debugging
 import argparse                     # commandline arguments
 import unicodedata                  # remove macrons
 
+import foone_auc                    # allows AUC to be calculated from location
+
 logger = logging.getLogger()
 handler = logging.StreamHandler(sys.stdout)
 
@@ -136,19 +138,24 @@ def int_to_latin(num, ending, mode):
     logging.debug(f"{num_int} as {mode} --> {result}")
     return result
 
-def get_year(input_date: datetime.datetime, idiomatic: bool):
+def get_year(input_date: datetime.datetime, idiomatic: bool, auc_local: bool):
+    # work out when the nearest city was founded
+    if auc_local:
+        founded = foone_auc.get_founding_date(foone_auc.get_wikipedia_article(foone_auc.get_current_location()))
+    else:
+        founded = -752 # AUC in 752 BC
     if isinstance(input_date, datetime.datetime):
         # AUC = 21 April 752 BC
         # double check this date: https://dcc.dickinson.edu/grammar/latin/reckoning-time
 
         if input_date.month == 4 and input_date.day < 21:
-            auc = input_date.year + 752
+            auc = input_date.year + -founded
         elif input_date.month == 4 and input_date.day >= 21:
-            auc = input_date.year + 753
+            auc = input_date.year + -founded + 1
         elif input_date.month < 4:
-            auc = input_date.year + 752
+            auc = input_date.year + -founded
         elif input_date.month > 4:
-            auc = input_date.year + 753
+            auc = input_date.year + -founded + 1
         
         if idiomatic:
             return "annō " + int_to_roman(auc) + " a.u.c."
@@ -372,6 +379,7 @@ if __name__ == "__main__":
     parser.add_argument("--no-macrons", help="print without any long vowel marks", action="store_true")
     parser.add_argument("--custom", help="convert a custom date e.g. 2000-01-23 (ISO 8601)")
     parser.add_argument("--debug", help="print calculations etc. for debugging", action="store_true")
+    parser.add_argument("--auc-location", help="use founding date of nearest city not Rome's", action="store_true")
     args = parser.parse_args()
 
     input_date = datetime.datetime.now()
@@ -388,6 +396,11 @@ if __name__ == "__main__":
         macron_pref = True
     else:
         macron_pref = False
+
+    if args.auc_location:
+        localized_pref = True
+    else:
+        localized_pref = False
 
     if args.custom:
         # TODO custom time not supported
@@ -420,13 +433,13 @@ if __name__ == "__main__":
                 }, ensure_ascii=False))
     else:
         if args.simple and args.custom:
-            print(get_day(input_date, macron_pref) + "\n" + get_date(input_date, macron_pref, idiom_pref) + "\n" + get_year(input_date, idiom_pref))
+            print(get_day(input_date, macron_pref) + "\n" + get_date(input_date, macron_pref, idiom_pref) + "\n" + get_year(input_date, idiom_pref, localized_pref))
         elif args.custom:
             # only print out date without time, because custom time not done yet
             print(input_date.strftime(f"%A, {input_date.day} %B %Y AD"))
-            print(get_day(input_date, macron_pref) + "\n" + get_date(input_date, macron_pref, idiom_pref) + "\n" + get_year(input_date, idiom_pref))
+            print(get_day(input_date, macron_pref) + "\n" + get_date(input_date, macron_pref, idiom_pref) + "\n" + get_year(input_date, idiom_pref, localized_pref))
         elif args.simple:
-            print(get_time(input_date, macron_pref) + "\n" + get_day(input_date, macron_pref) + "\n" + get_date(input_date, macron_pref, idiom_pref) + "\n" + get_year(input_date, idiom_pref))
+            print(get_time(input_date, macron_pref) + "\n" + get_day(input_date, macron_pref) + "\n" + get_date(input_date, macron_pref, idiom_pref) + "\n" + get_year(input_date, idiom_pref, localized_pref))
         else:
             print(input_date.strftime(f"%H:%M, %A, {input_date.day} %B %Y AD"))
-            print(get_time(input_date, macron_pref) + "\n" + get_day(input_date, macron_pref) + "\n" + get_date(input_date, macron_pref, idiom_pref) + "\n" + get_year(input_date, idiom_pref))
+            print(get_time(input_date, macron_pref) + "\n" + get_day(input_date, macron_pref) + "\n" + get_date(input_date, macron_pref, idiom_pref) + "\n" + get_year(input_date, idiom_pref, localized_pref))

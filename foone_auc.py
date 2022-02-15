@@ -65,11 +65,13 @@ def get_wikipedia_article(gc):
         wpage = disambiguate_wiki(e.options, gc)
         return wikipedia.page(wpage[0])
 
-def get_founding_date(article):
+def get_founding_date(article) -> int:
     #TODO: get founding date from article by looking for "Founded"/"Settled"/"Incorporated" from the infobox
-    # returns 753 (B.C) if none is found
+    # returns positive for A.D. years and negative for B.C. years
+    # remember there is no year zero!
+    # returns -752 (752 B.C) if none is found
     # wptools may be useful here
-    return 753 # Rome's founding date so the default for AUC if all else fails
+    return -752 # Rome's founding date so the default for AUC if all else fails
 
 if __name__ == "__main__":
     print(get_wikipedia_article(get_current_location()))
