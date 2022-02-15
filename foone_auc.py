@@ -10,7 +10,7 @@ def get_current_location(): #
     return g
 
 @cache
-def disambiguate_wiki(disamb_links, gc):
+def disambiguate_wiki(disamb_links, gc) -> str and int: # str is the page and int is its ranking for recursion
     temp_links = []
     # let's get rid of the most unlikely candidates
     for page in disamb_links:
@@ -19,6 +19,8 @@ def disambiguate_wiki(disamb_links, gc):
         if ", " not in page:
             continue
         temp_links.append(page)
+    if len(temp_links) == 1:
+        return temp_links[0], 1000
     ranking = {} 
     for page in temp_links:
         ranking[page] = 0
@@ -29,10 +31,10 @@ def disambiguate_wiki(disamb_links, gc):
             ranking[undisambed[0]] = undisambed[1]
         except wikipedia.exceptions.PageError:
             continue
-        wpage = wikipedia.page(page)
+        wpage = wikipedia.page(page) # try and load the page here to check the coordinates
         wlat, wlong = wpage.coordinates
         lat, long = gc.latlong
-        if int(lat) - 2 > int(wlat) or int(wlat) > int(lat) + 2:
+        if int(lat) - 2 > int(wlat) or int(wlat) > int(lat) + 2: # convert to int to slightly increase range
             ranking[page] -= 1000
         if int(long) - 2 > int(wlong) or int(wlong) > int(long) + 2:
             ranking[page] -= 1000
@@ -54,20 +56,23 @@ def disambiguate_wiki(disamb_links, gc):
 
 def get_wikipedia_article(gc):
     latitude, longitude = gc.latlng
-    results = wikipedia.geosearch(latitude=latitude, longitude=longitude, title=gc.city)
-    if len(results) < 1:
-        return wikipedia.page("Rome")
-    else: # disambiguate
-        try:
-            return wikipedia.page(results[0]) # .page raises below error if needed
-        except wikipedia.exceptions.DisambiguationError as e:
-            return wikipedia.page(disambiguate_wiki(e.options, gc)[0])
+    results = wikipedia.geosearch(latitude=latitude, longitude=longitude)
+    try:
+        if len(results) < 1:
+            return wikipedia.page("Rome")
+        elif len(results) == 1:
+            return wikipedia.page(results[0]) # .page raises DisambiguationError if needed
+        else:
+            wpage = disambiguate_wiki(results, gc)
+            return wikipedia.page(wpage)
+    except wikipedia.exceptions.DisambiguationError as e:
+        return wikipedia.page(disambiguate_wiki(e.options, gc)[0])
 
 def get_founding_date(article):
     #TODO: get founding date from article by looking for "Founded"/"Settled"/"Incorporated" from the infobox
     #raise error if none found? or scan summary/history for one?
     # wptools may be useful here
-    pass
+    return 753 # Rome's founding date so the default for AUC if all else fails
 
 if __name__ == "__main__":
     print(get_wikipedia_article(get_current_location()))
