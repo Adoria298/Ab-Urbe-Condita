@@ -72,7 +72,7 @@ def get_founding_date(article: wikipedia.WikipediaPage) -> int:
     # returns -752 (752 B.C) if none is found
     # wptools may be useful here
     city = article.title
-    print(f"put te in {city} esse.") #TODO: add macrons
+    print(f"puto te in {city} esse.") #TODO: add macrons
     return -752 # Rome's founding date so the default for AUC if all else fails
 
 if __name__ == "__main__":
